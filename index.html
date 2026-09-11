@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تطبيق أذكاري - أذكار المسلم اليومية والأدعية النبوية</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+            },
+            amber: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+            }
+          },
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+            amiri: ['Amiri', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    
+    .font-dhikr {
+      font-family: 'Amiri', serif;
+      line-height: 2.1;
+    }
+
+    .tab-btn.active {
+      background-color: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    
+    .completed-dhikr {
+      background-color: rgba(16, 185, 129, 0.08) !important;
+      border-color: rgba(16, 185, 129, 0.4) !important;
+    }
+
+    .badge-locked {
+      filter: grayscale(100%);
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 flex justify-center items-center min-h-screen p-0 md:p-4">
+
+  <div id="app" class="w-full max-w-md bg-slate-800 min-h-screen md:min-h-[880px] md:h-[92vh] md:rounded-3xl shadow-2xl relative flex flex-col overflow-hidden border border-slate-700">
+
+    <!-- Header -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-700/80 px-3 py-2.5 flex items-center justify-between sticky top-0 z-30">
+      <div class="flex items-center space-x-2.5 space-x-reverse">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-500 flex items-center justify-center shadow-lg text-white">
+          <i class="fa-solid fa-hands-praying text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold text-white tracking-wide flex items-center gap-1.5">
+            <span>تطبيق أذكاري</span>
+            <span id="header-streak-badge" class="bg-amber-500/20 text-amber-400 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/30 font-bold flex items-center gap-1" title="سلسلة المواظبة اليومية">
+              <i class="fa-solid fa-fire text-amber-500"></i>
+              <span id="header-streak-num">1</span>
+            </span>
+          </h1>
+          <p id="hijri-date-text" class="text-[10px] text-sky-400 font-semibold">جاري التحميل...</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1">
+        <button id="btn-open-badges" title="الأوسمة والتحدي الأسبوعي" class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 hover:text-amber-300 flex items-center justify-center transition active:scale-95 relative">
+          <i class="fa-solid fa-award text-xs"></i>
+          <span id="unlocked-badges-count" class="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-slate-900">0</span>
+        </button>
+        <button id="btn-open-calendar" title="التقويم الهجري والمناسبات" class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-sky-400 hover:text-sky-300 flex items-center justify-center transition active:scale-95">
+          <i class="fa-solid fa-calendar-days text-xs"></i>
+        </button>
+        <button id="btn-toggle-sound" title="الصوت والاهتزاز" class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-sky-400 flex items-center justify-center transition active:scale-95">
+          <i id="sound-icon" class="fa-solid fa-volume-high text-xs"></i>
+        </button>
+        <button id="btn-toggle-theme" title="الوضع الليلي/النهاري" class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-amber-400 flex items-center justify-center transition active:scale-95">
+          <i id="theme-icon" class="fa-solid fa-moon text-xs"></i>
+        </button>
+        <button id="btn-open-misbaha-modal" title="المسبحة الذكية" class="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold px-2.5 py-1 rounded-xl text-[11px] flex items-center gap-1 shadow-md hover:brightness-110 active:scale-95 transition">
+          <i class="fa-solid fa-gem text-[10px]"></i>
+          <span>المسبحة</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sunnah Banner -->
+    <div id="sunnah-reminder-banner" class="bg-gradient-to-r from-amber-950/80 via-slate-900 to-sky-950/80 border-b border-amber-500/30 px-3 py-1.5 flex items-center justify-between text-[11px] text-amber-200 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        <span id="sunnah-banner-text" class="font-bold">تذكير السُّنّة: الصلاة على النبي ﷺ وقراءة سورة الكهف اليوم.</span>
+      </div>
+      <button id="btn-close-sunnah-banner" class="text-slate-400 hover:text-white p-0.5">
+        <i class="fa-solid fa-xmark text-xs"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-slate-900 border-b border-slate-800 p-2 grid grid-cols-5 gap-1.5 shrink-0 z-20">
+      <button data-tab="morning" class="tab-btn active flex flex-col items-center justify-center py-2 px-0.5 rounded-2xl text-slate-300 hover:bg-slate-800 transition text-[11px] font-bold gap-1">
+        <span class="text-sm">☀️</span>
+        <span class="truncate">الصباح</span>
+      </button>
+      <button data-tab="evening" class="tab-btn flex flex-col items-center justify-center py-2 px-0.5 rounded-2xl text-slate-300 hover:bg-slate-800 transition text-[11px] font-bold gap-1">
+        <span class="text-sm">🌙</span>
+        <span class="truncate">المساء</span>
+      </button>
+      <button data-tab="sleep" class="tab-btn flex flex-col items-center justify-center py-2 px-0.5 rounded-2xl text-slate-300 hover:bg-slate-800 transition text-[11px] font-bold gap-1">
+        <span class="text-sm">🌌</span>
+        <span class="truncate">النوم</span>
+      </button>
+      <button data-tab="duas" class="tab-btn flex flex-col items-center justify-center py-2 px-0.5 rounded-2xl text-slate-300 hover:bg-slate-800 transition text-[11px] font-bold gap-1">
+        <span class="text-sm">📖</span>
+        <span class="truncate">الأدعية</span>
+      </button>
+      <button data-tab="myadhkar" class="tab-btn flex flex-col items-center justify-center py-2 px-0.5 rounded-2xl text-slate-300 hover:bg-slate-800 transition text-[11px] font-bold gap-1">
+        <span class="text-sm">🤲</span>
+        <span class="truncate">أذكاري</span>
+      </button>
+    </nav>
+
+    <!-- Search & Tab Info Bar -->
+    <div class="px-3 pt-2.5 pb-1 bg-slate-800/90 border-b border-slate-700/50 flex flex-col gap-2">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-slate-400 text-xs"></i>
+        <input id="search-input" type="search" placeholder="ابحث في نصوص الأذكار والأدعية..." class="w-full pr-8 pl-3 py-1.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-200 text-xs outline-none focus:border-sky-500 font-semibold placeholder:text-slate-500">
+      </div>
+
+      <div class="bg-slate-900/80 p-2 rounded-xl border border-slate-700/60 flex items-center justify-between text-xs font-bold">
+        <div class="flex items-center gap-2">
+          <span id="current-tab-title" class="text-sky-400">☀️ أذكار الصباح</span>
+          <span id="tab-progress-text" class="text-[10px] text-slate-400">(0 / 0 مكتمل)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-20 bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
+            <div id="tab-progress-bar" class="h-full bg-gradient-to-r from-sky-500 to-teal-400 rounded-full transition-all duration-300" style="width: 0%;"></div>
+          </div>
+          <button id="btn-reset-current-section" title="إعادة تصفير العدادات لهذه القائمة" class="text-slate-400 hover:text-red-400 text-xs transition">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Cards Container -->
+    <main id="adhkar-list-container" class="flex-1 overflow-y-auto p-3 space-y-3 pb-20">
+      <!-- Cards injected dynamically via JS -->
+    </main>
+
+    <!-- Modals -->
+
+    <!-- Badges & Weekly Challenge Modal -->
+    <div id="badges-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col justify-between p-4 hidden">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <button id="btn-close-badges" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-95">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <span class="font-extrabold text-sm text-amber-400 flex items-center gap-2">
+            <i class="fa-solid fa-trophy"></i>
+            <span>الأوسمة والتحدي الأسبوعي</span>
+          </span>
+        </div>
+        <div class="text-xs bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-lg border border-amber-500/20 font-bold" id="badge-streak-status">
+          🔥 سلسلة 1 يوم
+        </div>
+      </div>
+
+      <div class="my-auto overflow-y-auto py-2 space-y-4 max-h-[78vh]">
+        
+        <!-- Weekly Challenge Box -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950/60 border border-sky-500/30 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center">
+                <i class="fa-solid fa-bullseye text-sm"></i>
+              </div>
+              <div>
+                <h3 class="text-xs font-extrabold text-slate-100">التحدي الأسبوعي للتسبيح</h3>
+                <p class="text-[10px] text-slate-400">هدف التسبيحات والاستغفار هذا الأسبوع</p>
+              </div>
+            </div>
+            <button id="btn-edit-weekly-goal" class="text-xs text-sky-400 hover:underline font-bold">
+              تغيير الهدف
+            </button>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs font-extrabold">
+              <span class="text-slate-300">التقدم الأسبوعي:</span>
+              <span id="weekly-goal-text" class="text-sky-400">0 / 5,000</span>
+            </div>
+            <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+              <div id="weekly-goal-bar" class="bg-gradient-to-r from-sky-500 via-teal-400 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 0%;"></div>
+            </div>
+            <p id="weekly-goal-motivation" class="text-[10px] text-slate-400 text-center font-semibold pt-0.5">
+              استمر في الذكر للوصول للهدف الأسبوعي!
+            </p>
+          </div>
+        </div>
+
+        <!-- Badges Grid -->
+        <div class="space-y-2">
+          <h3 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-medal"></i>
+            <span>أوسمة الإنجاز الإيمانية</span>
+          </h3>
+
+          <div id="badges-grid-container" class="grid grid-cols-2 gap-2.5">
+            <!-- Dynamic Badges -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Calendar & Occasions Modal -->
+    <div id="calendar-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col justify-between p-4 hidden">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <button id="btn-close-calendar" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-95">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <span class="font-extrabold text-sm text-sky-400 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>التقويم الهجري والمناسبات</span>
+          </span>
+        </div>
+        <span class="text-xs bg-sky-500/10 text-sky-400 px-2.5 py-1 rounded-lg border border-sky-500/20 font-bold" id="cal-modal-hijri-month">
+          أم القرى
+        </span>
+      </div>
+
+      <div class="my-auto overflow-y-auto py-2 space-y-4 max-h-[78vh]">
+        <!-- Calendar Widget -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3">
+          <div class="flex items-center justify-between text-xs font-extrabold text-slate-200">
+            <span id="calendar-month-title">التقويم الهجري الحالي</span>
+            <span id="calendar-today-full" class="text-sky-400">---</span>
+          </div>
+
+          <!-- Hijri Calendar Grid -->
+          <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 border-b border-slate-800 pb-1">
+            <span>أحد</span><span>إثن</span><span>ثلا</span><span>أرب</span><span>خمي</span><span>جمعة</span><span>سبت</span>
+          </div>
+          <div id="hijri-calendar-days" class="grid grid-cols-7 gap-1 text-center text-xs font-bold">
+            <!-- Injected Days -->
+          </div>
+        </div>
+
+        <!-- Upcoming Islamic Occasions -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-2">
+          <h3 class="text-xs font-extrabold text-sky-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-moon"></i>
+            <span>المناسبات والسنن القادمة</span>
+          </h3>
+
+          <div class="space-y-2 text-xs font-semibold">
+            <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-xs">🌕</span>
+                <div>
+                  <div class="text-slate-200 font-bold">الأيام البيض (13، 14، 15)</div>
+                  <div class="text-[10px] text-slate-400">سُنّة صيام 3 أيام من كل شهر هجري</div>
+                </div>
+              </div>
+              <span class="text-[10px] bg-slate-800 text-amber-300 px-2 py-1 rounded-lg">منتصف الشهر</span>
+            </div>
+
+            <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs">🕌</span>
+                <div>
+                  <div class="text-slate-200 font-bold">شهر رمضان المبارك</div>
+                  <div class="text-[10px] text-slate-400">1 رمضان - شهر الصيام والقرآن</div>
+                </div>
+              </div>
+              <span class="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-1 rounded-lg border border-emerald-800">قريباً</span>
+            </div>
+
+            <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xs">🕋</span>
+                <div>
+                  <div class="text-slate-200 font-bold">يوم عرفة وعيد الأضحى</div>
+                  <div class="text-[10px] text-slate-400">9 - 10 ذو الحجة</div>
+                </div>
+              </div>
+              <span class="text-[10px] bg-sky-950 text-sky-300 px-2 py-1 rounded-lg border border-sky-800">ذو الحجة</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Existing Stats Modal -->
+    <div id="stats-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col justify-between p-4 hidden">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-3">
+          <button id="btn-close-stats" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-95">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <span id="stats-header-title" class="font-extrabold text-sm text-sky-400">سُبْحَانَ اللَّهِ</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">إحصائيات الذكر</span>
+        </div>
+      </div>
+
+      <div class="my-auto overflow-y-auto py-2 space-y-4 max-h-[75vh]">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 flex justify-around text-xs font-bold text-slate-300">
+          <div class="flex items-center gap-1.5"><i class="fa-solid fa-arrow-up text-sky-400"></i> <span id="stats-target-val">100</span> الهدف اليومي</div>
+          <div class="flex items-center gap-1.5"><i class="fa-solid fa-calendar-days text-amber-400"></i> سجل الإنجاز</div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+          <h3 class="text-xs font-extrabold text-sky-400 uppercase tracking-wider">الأهداف والإنجاز (Target)</h3>
+          <div class="space-y-2 text-xs">
+            <div>
+              <div class="flex justify-between text-slate-300 font-semibold mb-1"><span>Today (اليوم)</span><span id="stat-bar-today-num">0 / 0</span></div>
+              <div class="w-full bg-slate-800 h-2.5 rounded-lg overflow-hidden"><div id="stat-bar-today" class="bg-sky-500 h-full rounded-lg transition-all" style="width: 0%;"></div></div>
+            </div>
+            
+            <div>
+              <div class="flex justify-between text-slate-400 text-[11px] mb-1"><span>Week (الأسبوع)</span><span id="stat-bar-week-num">0 / 0</span></div>
+              <div class="w-full bg-slate-800 h-2 rounded-lg overflow-hidden"><div id="stat-bar-week" class="bg-sky-600/80 h-full rounded-lg transition-all" style="width: 0%;"></div></div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-slate-400 text-[11px] mb-1"><span>Month (الشهر)</span><span id="stat-bar-month-num">0 / 0</span></div>
+              <div class="w-full bg-slate-800 h-2 rounded-lg overflow-hidden"><div id="stat-bar-month" class="bg-sky-600/80 h-full rounded-lg transition-all" style="width: 0%;"></div></div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-slate-400 text-[11px] mb-1"><span>Year (السنة)</span><span id="stat-bar-year-num">0 / 0</span></div>
+              <div class="w-full bg-slate-800 h-2 rounded-lg overflow-hidden"><div id="stat-bar-year" class="bg-sky-600/80 h-full rounded-lg transition-all" style="width: 0%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-center text-xs font-extrabold">
+            <span class="text-sky-400">History (السجل الأخير)</span>
+            <span class="text-slate-400 text-[11px]">يومي</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2 text-center bg-slate-950/40 p-2 rounded-xl border border-slate-800 text-[11px] font-bold">
+            <div>
+              <div class="text-[9px] text-slate-400" id="hist-day-3-name">---</div>
+              <div class="text-slate-300" id="hist-day-3-date">-</div>
+              <div class="text-sky-400 text-xs font-mono mt-1" id="hist-day-3-val">0</div>
+            </div>
+            <div>
+              <div class="text-[9px] text-slate-400" id="hist-day-2-name">---</div>
+              <div class="text-slate-300" id="hist-day-2-date">-</div>
+              <div class="text-sky-400 text-xs font-mono mt-1" id="hist-day-2-val">0</div>
+            </div>
+            <div>
+              <div class="text-[9px] text-slate-400" id="hist-day-1-name">---</div>
+              <div class="text-slate-300" id="hist-day-1-date">-</div>
+              <div class="text-sky-400 text-xs font-mono mt-1" id="hist-day-1-val">0</div>
+            </div>
+            <div class="bg-sky-600/20 rounded-lg p-1 border border-sky-500/30">
+              <div class="text-[9px] text-sky-300">TODAY</div>
+              <div class="text-white font-bold" id="hist-day-0-date">-</div>
+              <div class="text-sky-400 text-xs font-mono font-extrabold mt-1" id="hist-day-0-val">0</div>
+            </div>
+          </div>
+
+          <div class="h-32 bg-slate-950/60 rounded-xl p-3 flex items-end justify-around border border-slate-800/80">
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <span class="text-[10px] text-sky-400 font-mono" id="chart-val-2">0</span>
+              <div id="chart-bar-2" class="w-6 bg-slate-800 rounded-t-lg transition-all" style="height: 10%;"></div>
+              <span class="text-[9px] text-slate-400">أمس الأول</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <span class="text-[10px] text-sky-400 font-mono" id="chart-val-1">0</span>
+              <div id="chart-bar-1" class="w-6 bg-slate-800 rounded-t-lg transition-all" style="height: 10%;"></div>
+              <span class="text-[9px] text-slate-400">أمس</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 h-full justify-end">
+              <span class="text-[10px] text-sky-400 font-mono font-bold" id="chart-val-0">0</span>
+              <div id="chart-bar-0" class="w-6 bg-sky-500 rounded-t-lg shadow-lg shadow-sky-500/40 transition-all" style="height: 100%;"></div>
+              <span class="text-[9px] text-sky-400 font-bold">اليوم</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dhikr Add/Edit Modal -->
+    <div id="dhikr-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 id="dhikr-modal-title" class="font-extrabold text-base text-sky-400 flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>تعديل الذكر</span>
+          </h3>
+          <button id="btn-close-dhikr-modal" class="text-slate-400 hover:text-white p-1">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <div class="space-y-3 text-xs font-bold">
+          <input type="hidden" id="dhikr-modal-id" value="">
+
+          <div>
+            <label class="block text-slate-400 mb-1">نص الذكر / الدعاء</label>
+            <textarea id="dhikr-modal-text" rows="3" placeholder="أدخل نص الذكر..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-slate-100 font-dhikr text-sm outline-none focus:border-sky-500"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-400 mb-1">العدد المطلوب</label>
+              <input id="dhikr-modal-target" type="number" value="33" min="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-slate-100 text-center text-sm font-extrabold outline-none focus:border-sky-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">القسم</label>
+              <select id="dhikr-modal-category" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-slate-100 text-xs font-semibold outline-none focus:border-sky-500">
+                <option value="myadhkar">أذكاري</option>
+                <option value="morning">أذكار الصباح</option>
+                <option value="evening">أذكار المساء</option>
+                <option value="sleep">أذكار النوم</option>
+                <option value="duas">الأدعية النبوية</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 mb-1">فضل الذكر / المصدر (اختياري)</label>
+            <input id="dhikr-modal-virtue" type="text" placeholder="مثال: البخاري / يقال عند الشدة..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2 text-slate-100 font-semibold outline-none focus:border-sky-500">
+          </div>
+        </div>
+
+        <button id="btn-save-dhikr-modal" class="w-full py-3 bg-gradient-to-r from-sky-500 to-teal-500 text-white rounded-2xl font-extrabold text-xs shadow-lg hover:brightness-110 active:scale-95 transition">
+          حفظ التغيرات
+        </button>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-sm p-5 shadow-2xl text-center space-y-4">
+        <div class="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto text-xl">
+          <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-base text-slate-100">تأكيد المسح</h3>
+          <p class="text-xs text-slate-400 mt-1" id="delete-confirm-desc">هل أنت أثق بك أنك تريد مسح هذا الذكر نهائياً من القائمة؟</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 font-bold text-xs pt-2">
+          <button id="btn-cancel-delete" class="py-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 transition">إلغاء</button>
+          <button id="btn-confirm-delete" class="py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl shadow-lg transition">مسح الذكر</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-msg" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-sky-600 text-white font-bold text-xs px-4 py-2.5 rounded-2xl shadow-xl z-50 transition-all duration-300 opacity-0 pointer-events-none transform translate-y-3 flex items-center gap-2">
+      <i class="fa-solid fa-circle-check"></i>
+      <span id="toast-text">تمت العملية بنجاح</span>
+    </div>
+
+    <!-- Misbaha Modal -->
+    <div id="misbaha-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col justify-between p-4 hidden">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <button id="btn-close-misbaha" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-95">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <span class="font-extrabold text-sm text-sky-400">المسبحة الإلكترونية الشاملة</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-reset-misbaha" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 hover:text-red-400 flex items-center justify-center active:scale-95">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="my-auto text-center px-4 space-y-4">
+        <select id="misbaha-select-dhikr" class="bg-slate-900 border border-slate-700 text-sky-400 text-xs font-bold rounded-xl px-3 py-2 max-w-full outline-none">
+        </select>
+
+        <div id="misbaha-dhikr-card" class="bg-slate-900/90 border border-slate-700 p-6 rounded-3xl shadow-xl min-h-[140px] flex flex-col justify-center items-center">
+          <p id="misbaha-dhikr-text" class="font-dhikr text-2xl md:text-3xl text-slate-100 font-bold leading-relaxed">
+            سُبْحَانَ اللَّهِ وَبِحَمْدِهِ
+          </p>
+          <p id="misbaha-dhikr-virtue" class="text-[11px] text-amber-400 font-semibold mt-2">
+            من قالها 100 مرة حُطّت خطاياه وإن كانت مثل زبد البحر
+          </p>
+        </div>
+
+        <div class="flex justify-center my-4">
+          <button id="btn-misbaha-tap" class="relative w-44 h-44 rounded-full bg-slate-900 border-4 border-sky-500/30 flex flex-col items-center justify-center shadow-2xl active:scale-95 transition-all group hover:border-sky-400">
+            <span id="misbaha-count-num" class="text-4xl font-extrabold font-mono text-sky-400 tracking-tight">0</span>
+            <div class="w-12 h-px bg-slate-700 my-1"></div>
+            <span id="misbaha-target-num" class="text-xs font-bold text-slate-400 font-mono">الهدف: 100</span>
+          </button>
+        </div>
+
+        <div class="flex justify-center gap-2 text-xs font-bold">
+          <button class="misbaha-quick-add bg-slate-900 border border-slate-700 hover:border-sky-500 text-slate-200 px-3 py-1.5 rounded-xl active:scale-95" data-add="1">+1</button>
+          <button class="misbaha-quick-add bg-slate-900 border border-slate-700 hover:border-sky-500 text-slate-200 px-3 py-1.5 rounded-xl active:scale-95" data-add="10">+10</button>
+          <button class="misbaha-quick-add bg-slate-900 border border-slate-700 hover:border-sky-500 text-slate-200 px-3 py-1.5 rounded-xl active:scale-95" data-add="33">+33</button>
+          <button class="misbaha-quick-add bg-slate-900 border border-slate-700 hover:border-sky-500 text-slate-200 px-3 py-1.5 rounded-xl active:scale-95" data-add="100">+100</button>
+        </div>
+      </div>
+
+      <div class="text-center text-[10px] text-slate-500 font-semibold border-t border-slate-800 pt-2">
+        انقر في أي مكان داخل الدائرة للتسبيح • يدعم الصوت والاهتزاز
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const MORNING_ATHKAR = [
+      {
+        id: 'm1',
+        category: 'morning',
+        text: 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ: «اللَّهُ لاَ إِلَٰهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ...» [آية الكرسي].',
+        count: 1,
+        virtue: 'من قالها حين يصبح أُجير من الجن حتى يمسي.'
+      },
+      {
+        id: 'm2',
+        category: 'morning',
+        text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ: «قُلْ هُوَ اللَّهُ أَحَدٌ» والمعوذات ثلاث مرات.',
+        count: 3,
+        virtue: 'تكفيك من كل شيء.'
+      },
+      {
+        id: 'm3',
+        category: 'morning',
+        text: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ.',
+        count: 1,
+        virtue: 'الافتتاح بالثناء والطلب من الله خَيْرَ اليوم.'
+      },
+      {
+        id: 'm4',
+        category: 'morning',
+        text: 'اللَّهُمَّ أَنْتَ رَبِّي لاَ إِلَهَ إِلاَّ أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ...',
+        count: 1,
+        virtue: 'سيد الاستغفار: من قالها موقناً بها فمات دخل الجنة.'
+      },
+      {
+        id: 'm5',
+        category: 'morning',
+        text: 'بِسْمِ اللَّهِ الَّذِي لاَ يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الأَرْضِ وَلاَ فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ.',
+        count: 3,
+        virtue: 'لم يضره شيء في ذلك اليوم.'
+      },
+      {
+        id: 'm6',
+        category: 'morning',
+        text: 'رَضِيتُ بِاللَّهِ رَبّاً، وَبِالإِسْلاَمِ دِيناً، وَبُِمَحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيّاً.',
+        count: 3,
+        virtue: 'كان حقاً على الله أن يرضيه يوم القيامة.'
+      },
+      {
+        id: 'm7',
+        category: 'morning',
+        text: 'يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلاَ تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ.',
+        count: 1,
+        virtue: 'الافتقار والتبرؤ من حول النفس إلى حول الله.'
+      },
+      {
+        id: 'm8',
+        category: 'morning',
+        text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ.',
+        count: 100,
+        virtue: 'حُطّت خطاياه وإن كانت مثل زبد البحر.'
+      }
+    ];
+
+    const EVENING_ATHKAR = [
+      {
+        id: 'e1',
+        category: 'evening',
+        text: 'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ...',
+        count: 1,
+        virtue: 'طلب الخير والسلامة طوال الليل.'
+      },
+      {
+        id: 'e2',
+        category: 'evening',
+        text: 'اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ.',
+        count: 1,
+        virtue: 'من أذكار المساء الرواتب.'
+      },
+      {
+        id: 'e3',
+        category: 'evening',
+        text: 'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ.',
+        count: 3,
+        virtue: 'لم تضره حمة في ليلته.'
+      },
+      {
+        id: 'e4',
+        category: 'evening',
+        text: 'اللَّهُمَّ إِنِّي أَمْسَيْتُ أُشْهِدُكَ، وَأُشْهِدُ حَمَلَةَ عَرْشِكَ...',
+        count: 4,
+        virtue: 'العتق من النار.'
+      }
+    ];
+
+    const SLEEP_ATHKAR = [
+      {
+        id: 's1',
+        category: 'sleep',
+        text: 'بِاسْمِكَ رَبِّي وَضَعْتُ جَنْبِي، وَبِكَ أَرْفَعُهُ، فَإِنْ أَمْسَكْتَ نَفْسِي فَارْحَمْهَا...',
+        count: 1,
+        virtue: 'طلب الحفظ أثناء النوم.'
+      },
+      {
+        id: 's2',
+        category: 'sleep',
+        text: 'اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ.',
+        count: 3,
+        virtue: 'سنة النبي عند النوم.'
+      },
+      {
+        id: 's3',
+        category: 'sleep',
+        text: 'سُبْحَانَ اللَّهِ (33)، والْحَمْدُ لِلَّهِ (33)، واللَّهُ أَكْبَرُ (34).',
+        count: 100,
+        virtue: 'خير لكما من خادم.'
+      }
+    ];
+
+    const PROPHETIC_DUAS = [
+      {
+        id: 'd1',
+        category: 'duas',
+        text: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى.',
+        count: 1,
+        virtue: 'من جوامع الدعاء النبوي الشريف (مسلم).'
+      },
+      {
+        id: 'd2',
+        category: 'duas',
+        text: 'اللَّهُمَّ رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ.',
+        count: 1,
+        virtue: 'أكثر دعاء النبي صلى الله عليه وسلم (متفق عليه).'
+      },
+      {
+        id: 'd3',
+        category: 'duas',
+        text: 'رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيمُ.',
+        count: 100,
+        virtue: 'كان النبي صلى الله عليه وسلم يعد له في المجلس الواحد مائة مرة.'
+      },
+      {
+        id: 'd4',
+        category: 'duas',
+        text: 'اللَّهُمَّ إنِّي أعُوذُ بِكَ مِنَ العَجْزِ وَالكَسَلِ، وَالجُبْنِ وَالبُخْلِ، وَهَرَمِ، وَعَذَابِ القَبْرِ.',
+        count: 1,
+        virtue: 'الاستعاذة النبوية الشاملة من آفات النفوس.'
+      },
+      {
+        id: 'd5',
+        category: 'duas',
+        text: 'اللَّهُمَّ مُصَرِّفَ القُلُوبِ صَرِّفْ قُلُوبَنَا عَلَى طَاعَتِكَ.',
+        count: 1,
+        virtue: 'دعاء النبي الثابت لتثبيت القلب على الإيمان.'
+      },
+      {
+        id: 'd6',
+        category: 'duas',
+        text: 'يَا مُقَلِّبَ القُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ.',
+        count: 1,
+        virtue: 'أكثر دعاء كان يدعو به نبينا محمد صلى الله عليه وسلم.'
+      },
+      {
+        id: 'd7',
+        category: 'duas',
+        text: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ زَوَالِ نِعْمَتِكَ، وَتَحَوُّلِ عَافِيَتِكَ، وَفُجَاءَةِ نِقْمَتِكَ، وَجَمِيعِ سُخْطِكَ.',
+        count: 1,
+        virtue: 'من أدعية النبي الجامعة لحفظ نعم الله.'
+      }
+    ];
+
+    let MY_ATHKAR = [
+      {
+        id: 'my1',
+        category: 'myadhkar',
+        text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ',
+        count: 100,
+        virtue: 'كلمتان خفيفتان على اللسان ثقيلتان في الميزان.'
+      },
+      {
+        id: 'my2',
+        category: 'myadhkar',
+        text: 'لاَ حَوْلَ وَلاَ قُوَّةَ إِلاَّ بِاللَّهِ',
+        count: 100,
+        virtue: 'كنز من كنز الجنة.'
+      },
+      {
+        id: 'my3',
+        category: 'myadhkar',
+        text: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
+        count: 100,
+        virtue: 'جعل الله له من كل هم فرجاً.'
+      }
+    ];
+
+    // System States
+    let currentTab = 'morning';
+    let countsState = JSON.parse(localStorage.getItem('athkari_counts_v3') || '{}');
+    let historyData = JSON.parse(localStorage.getItem('athkari_history_v4') || '{}');
+    let customAthkarList = JSON.parse(localStorage.getItem('athkari_custom_v3') || '[]');
+    let deletedIds = new Set(JSON.parse(localStorage.getItem('athkari_deleted_v3') || '[]'));
+    let customEdits = JSON.parse(localStorage.getItem('athkari_edits_v3') || '{}');
+    let soundEnabled = localStorage.getItem('athkari_sound') !== 'false';
+    let currentSearchTerm = '';
+    let pendingDeleteId = null;
+
+    // Badges & Streak System States
+    let streakState = JSON.parse(localStorage.getItem('athkari_streak_v1') || '{"count": 1, "lastDate": ""}');
+    let weeklyGoalTarget = parseInt(localStorage.getItem('athkari_weekly_goal_target') || '5000');
+
+    const synth = window.speechSynthesis;
+
+    // DOM Elements
+    const listContainer = document.getElementById('adhkar-list-container');
+    const searchInput = document.getElementById('search-input');
+    const tabProgressText = document.getElementById('tab-progress-text');
+    const tabProgressBar = document.getElementById('tab-progress-bar');
+    const currentTabTitle = document.getElementById('current-tab-title');
+
+    // Modals
+    const misbahaModal = document.getElementById('misbaha-modal');
+    const misbahaSelect = document.getElementById('misbaha-select-dhikr');
+    const misbahaText = document.getElementById('misbaha-dhikr-text');
+    const misbahaVirtue = document.getElementById('misbaha-dhikr-virtue');
+    const misbahaCountNum = document.getElementById('misbaha-count-num');
+    const misbahaTargetNum = document.getElementById('misbaha-target-num');
+    const btnMisbahaTap = document.getElementById('btn-misbaha-tap');
+    
+    const dhikrModal = document.getElementById('dhikr-modal');
+    const dhikrModalTitle = document.getElementById('dhikr-modal-title');
+    const dhikrModalId = document.getElementById('dhikr-modal-id');
+    const dhikrModalText = document.getElementById('dhikr-modal-text');
+    const dhikrModalTarget = document.getElementById('dhikr-modal-target');
+    const dhikrModalCategory = document.getElementById('dhikr-modal-category');
+    const dhikrModalVirtue = document.getElementById('dhikr-modal-virtue');
+
+    const statsModal = document.getElementById('stats-modal');
+    const calendarModal = document.getElementById('calendar-modal');
+    const badgesModal = document.getElementById('badges-modal');
+    const deleteModal = document.getElementById('delete-confirm-modal');
+    const toastMsg = document.getElementById('toast-msg');
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateHijriDate();
+      combineCustomAthkar();
+      setupTabs();
+      setupEventListeners();
+      syncTodayHistory();
+      checkAndUpdateStreak();
+      updateSunnahBanner();
+      renderCurrentTab();
+      updateSoundIcon();
+      updateBadgesUI();
+    });
+
+    function getTodayKey() {
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function checkAndUpdateStreak() {
+      const today = getTodayKey();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+      if (!streakState.lastDate) {
+        streakState.count = 1;
+        streakState.lastDate = today;
+      } else if (streakState.lastDate === yesterdayKey) {
+        // Maintained
+      } else if (streakState.lastDate !== today) {
+        // Broken streak
+        streakState.count = 1;
+      }
+
+      localStorage.setItem('athkari_streak_v1', JSON.stringify(streakState));
+      document.getElementById('header-streak-num').textContent = streakState.count;
+      document.getElementById('badge-streak-status').textContent = `🔥 سلسلة ${streakState.count} يوم`;
+    }
+
+    function markActivityToday() {
+      const today = getTodayKey();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+      if (streakState.lastDate === yesterdayKey) {
+        streakState.count += 1;
+        streakState.lastDate = today;
+      } else if (streakState.lastDate !== today) {
+        streakState.count = 1;
+        streakState.lastDate = today;
+      }
+
+      localStorage.setItem('athkari_streak_v1', JSON.stringify(streakState));
+      document.getElementById('header-streak-num').textContent = streakState.count;
+      document.getElementById('badge-streak-status').textContent = `🔥 سلسلة ${streakState.count} يوم`;
+    }
+
+    function syncTodayHistory() {
+      const todayKey = getTodayKey();
+      historyData[todayKey] = historyData[todayKey] || {};
+      Object.keys(countsState).forEach(id => {
+        historyData[todayKey][id] = countsState[id];
+      });
+      localStorage.setItem('athkari_history_v4', JSON.stringify(historyData));
+    }
+
+    function formatNum(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+      return num.toLocaleString('ar-EG');
+    }
+
+    function getTotalAllTimeCounts() {
+      let total = 0;
+      Object.keys(historyData).forEach(dateKey => {
+        Object.keys(historyData[dateKey]).forEach(dhikrId => {
+          total += Number(historyData[dateKey][dhikrId] || 0);
+        });
+      });
+      return total;
+    }
+
+    function getWeeklyTotalCounts() {
+      let total = 0;
+      const now = new Date();
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (historyData[k]) {
+          Object.keys(historyData[k]).forEach(id => {
+            total += Number(historyData[k][id] || 0);
+          });
+        }
+      }
+      return total;
+    }
+
+    function getSumForDays(dhikrId, daysCount) {
+      syncTodayHistory();
+      let total = 0;
+      const now = new Date();
+      for (let i = 0; i < daysCount; i++) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const k = `${year}-${month}-${day}`;
+        if (historyData[k] && historyData[k][dhikrId] !== undefined) {
+          total += Number(historyData[k][dhikrId]);
+        }
+      }
+      return total;
+    }
+
+    function combineCustomAthkar() {
+      const myIds = new Set(MY_ATHKAR.map(item => item.id));
+      customAthkarList.forEach(item => {
+        if (!myIds.has(item.id)) {
+          MY_ATHKAR.push(item);
+        }
+      });
+    }
+
+    function getAllAthkarMerged() {
+      const all = [...MORNING_ATHKAR, ...EVENING_ATHKAR, ...SLEEP_ATHKAR, ...PROPHETIC_DUAS, ...MY_ATHKAR];
+      return all
+        .filter(item => !deletedIds.has(item.id))
+        .map(item => {
+          if (customEdits[item.id]) {
+            return { ...item, ...customEdits[item.id] };
+          }
+          return item;
+        });
+    }
+
+    function getActiveDataset() {
+      const allMerged = getAllAthkarMerged();
+      return allMerged.filter(item => item.category === currentTab);
+    }
+
+    function setupTabs() {
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          tabButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentTab = btn.getAttribute('data-tab');
+
+          const titles = {
+            morning: '☀️ أذكار الصباح كاملة',
+            evening: '🌙 أذكار المساء كاملة',
+            sleep: '🌌 أذكار النوم كاملة',
+            duas: '📖 الأدعية النبوية الشريفة',
+            myadhkar: '🤲 أذكاري والبرنامج'
+          };
+          currentTabTitle.textContent = titles[currentTab] || '';
+          renderCurrentTab();
+        });
+      });
+    }
+
+    function renderCurrentTab() {
+      listContainer.innerHTML = '';
+      const dataset = getActiveDataset();
+
+      const filtered = dataset.filter(item => 
+        item.text.includes(currentSearchTerm) || (item.virtue && item.virtue.includes(currentSearchTerm))
+      );
+
+      let totalItems = dataset.length;
+      let completedItems = 0;
+
+      dataset.forEach(item => {
+        const currentCount = countsState[item.id] || 0;
+        if (currentCount >= item.count) completedItems++;
+      });
+
+      const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+      tabProgressText.textContent = `(${completedItems} / ${totalItems} مكتمل)`;
+      tabProgressBar.style.width = `${percent}%`;
+
+      if (currentTab === 'myadhkar') {
+        const addBtnBox = document.createElement('div');
+        addBtnBox.className = 'mb-2';
+        addBtnBox.innerHTML = `
+          <button id="btn-open-add-modal" class="w-full py-3 px-4 bg-gradient-to-r from-sky-600/30 to-teal-600/30 border border-sky-500/40 rounded-2xl text-sky-300 font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-sky-600/40 transition active:scale-95">
+            <i class="fa-solid fa-plus-circle text-sm"></i>
+            <span>إضافة ذكر أو دعاء مخصص جديد</span>
+          </button>
+        `;
+        listContainer.appendChild(addBtnBox);
+        document.getElementById('btn-open-add-modal').addEventListener('click', () => {
+          openAddDhikrModal();
+        });
+      }
+
+      if (filtered.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'text-center py-12 text-slate-500 space-y-2';
+        emptyDiv.innerHTML = `
+          <i class="fa-solid fa-file-circle-exclamation text-3xl"></i>
+          <p class="text-xs font-bold">لا توجد أذكار مطابقة في هذا القسم</p>
+        `;
+        listContainer.appendChild(emptyDiv);
+        return;
+      }
+
+      filtered.forEach((item, index) => {
+        const userDoneCount = countsState[item.id] || 0;
+        const isCompleted = userDoneCount >= item.count;
+
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-3xl bg-slate-900/90 border border-slate-700/80 shadow-md transition-all space-y-3 relative ${isCompleted ? 'completed-dhikr' : ''}`;
+        
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-extrabold text-sky-400">
+                ${index + 1}
+              </span>
+              <span class="text-[11px] font-bold text-amber-400/90">
+                الهدف: ${item.count} مرة
+              </span>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <button title="إحصائيات السجل" class="btn-open-stats w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 flex items-center justify-center text-xs" data-id="${item.id}">
+                <i class="fa-solid fa-chart-bar"></i>
+              </button>
+              <button title="قراءة صوتية" class="btn-tts-read w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs" data-text="${encodeURIComponent(item.text)}">
+                <i class="fa-solid fa-volume-low"></i>
+              </button>
+              <button title="فتح بالمسبحة" class="btn-open-in-misbaha w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 flex items-center justify-center text-xs" data-id="${item.id}">
+                <i class="fa-solid fa-gem"></i>
+              </button>
+              <button title="تعديل الذكر" class="btn-edit-dhikr w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-400 flex items-center justify-center text-xs" data-id="${item.id}">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button title="مسح الذكر" class="btn-delete-dhikr w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-red-400 flex items-center justify-center text-xs" data-id="${item.id}">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="font-dhikr text-lg md:text-xl text-slate-100 font-bold leading-relaxed text-right">
+            ${item.text}
+          </p>
+
+          ${item.virtue ? `
+            <div class="bg-slate-800/60 p-2 rounded-xl text-[11px] text-slate-400 font-semibold border border-slate-700/40 flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-info text-sky-400 shrink-0"></i>
+              <span>${item.virtue}</span>
+            </div>
+          ` : ''}
+
+          <div class="flex items-center justify-between pt-1">
+            <button class="btn-increment-dhikr px-5 py-2 rounded-2xl bg-gradient-to-r ${isCompleted ? 'from-emerald-600 to-teal-600' : 'from-sky-600 to-sky-700'} text-white font-extrabold text-xs shadow-md hover:brightness-110 active:scale-95 transition flex items-center gap-2" data-id="${item.id}" data-max="${item.count}">
+              <i class="fa-solid ${isCompleted ? 'fa-check-double' : 'fa-hand-pointer'}"></i>
+              <span>${isCompleted ? 'تم الإكمال' : 'تسبيح +1'}</span>
+            </button>
+
+            <div class="text-left font-mono">
+              <span class="text-lg font-extrabold ${isCompleted ? 'text-emerald-400' : 'text-sky-400'}">${userDoneCount}</span>
+              <span class="text-xs text-slate-500"> / ${item.count}</span>
+            </div>
+          </div>
+        `;
+
+        listContainer.appendChild(card);
+      });
+
+      attachCardEvents();
+    }
+
+    function attachCardEvents() {
+      document.querySelectorAll('.btn-increment-dhikr').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const current = countsState[id] || 0;
+          countsState[id] = current + 1;
+          localStorage.setItem('athkari_counts_v3', JSON.stringify(countsState));
+          syncTodayHistory();
+          markActivityToday();
+          playFeedbackSound();
+          renderCurrentTab();
+          updateBadgesUI();
+        });
+      });
+
+      document.querySelectorAll('.btn-open-stats').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          openStatsModal(id);
+        });
+      });
+
+      document.querySelectorAll('.btn-open-in-misbaha').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          openMisbahaWithDhikr(id);
+        });
+      });
+
+      document.querySelectorAll('.btn-tts-read').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rawText = decodeURIComponent(btn.getAttribute('data-text'));
+          speakText(rawText);
+        });
+      });
+
+      document.querySelectorAll('.btn-edit-dhikr').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          openEditDhikrModal(id);
+        });
+      });
+
+      document.querySelectorAll('.btn-delete-dhikr').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          promptDeleteDhikr(id);
+        });
+      });
+    }
+
+    function openAddDhikrModal() {
+      dhikrModalTitle.innerHTML = '<i class="fa-solid fa-plus-circle text-sky-400"></i><span>إضافة ذكر جديد</span>';
+      dhikrModalId.value = '';
+      dhikrModalText.value = '';
+      dhikrModalTarget.value = '33';
+      dhikrModalCategory.value = currentTab;
+      dhikrModalVirtue.value = '';
+      dhikrModal.classList.remove('hidden');
+    }
+
+    function openEditDhikrModal(id) {
+      const all = getAllAthkarMerged();
+      const item = all.find(x => x.id === id);
+      if (!item) return;
+
+      dhikrModalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square text-teal-400"></i><span>تعديل الذكر</span>';
+      dhikrModalId.value = item.id;
+      dhikrModalText.value = item.text;
+      dhikrModalTarget.value = item.count;
+      dhikrModalCategory.value = item.category || currentTab;
+      dhikrModalVirtue.value = item.virtue || '';
+      dhikrModal.classList.remove('hidden');
+    }
+
+    function saveDhikrModalData() {
+      const id = dhikrModalId.value;
+      const text = dhikrModalText.value.trim();
+      const target = parseInt(dhikrModalTarget.value) || 33;
+      const category = dhikrModalCategory.value;
+      const virtue = dhikrModalVirtue.value.trim();
+
+      if (!text) {
+        showToast('يرجى ألا يترك نص الذكر فارغاً');
+        return;
+      }
+
+      if (id) {
+        customEdits[id] = { text, count: target, category, virtue };
+        localStorage.setItem('athkari_edits_v3', JSON.stringify(customEdits));
+        showToast('تم تعديل الذكر بنجاح');
+      } else {
+        const newObj = {
+          id: 'custom_' + Date.now(),
+          category: category,
+          text: text,
+          count: target,
+          virtue: virtue || 'ذكر أو دعاء مخصص'
+        };
+        customAthkarList.push(newObj);
+        localStorage.setItem('athkari_custom_v3', JSON.stringify(customAthkarList));
+        MY_ATHKAR.push(newObj);
+        showToast('تمت إضافة الذكر الجديد بنجاح');
+      }
+
+      dhikrModal.classList.add('hidden');
+      renderCurrentTab();
+    }
+
+    function promptDeleteDhikr(id) {
+      pendingDeleteId = id;
+      deleteModal.classList.remove('hidden');
+    }
+
+    function confirmDeleteDhikr() {
+      if (!pendingDeleteId) return;
+      deletedIds.add(pendingDeleteId);
+      localStorage.setItem('athkari_deleted_v3', JSON.stringify(Array.from(deletedIds)));
+      
+      deleteModal.classList.add('hidden');
+      pendingDeleteId = null;
+      showToast('تم مسح الذكر بنجاح');
+      renderCurrentTab();
+    }
+
+    function openStatsModal(dhikrId) {
+      const allAthkar = getAllAthkarMerged();
+      const item = allAthkar.find(x => x.id === dhikrId) || allAthkar[0];
+      const currentVal = countsState[dhikrId] || 0;
+
+      syncTodayHistory();
+
+      const dailyTarget = item.count;
+      const weekTarget = dailyTarget * 7;
+      const monthTarget = dailyTarget * 30;
+      const yearTarget = dailyTarget * 365;
+
+      const weekVal = getSumForDays(dhikrId, 7);
+      const monthVal = getSumForDays(dhikrId, 30);
+      const yearVal = getSumForDays(dhikrId, 365);
+
+      const todayPercent = Math.min(100, Math.round((currentVal / dailyTarget) * 100));
+      const weekPercent = Math.min(100, Math.round((weekVal / weekTarget) * 100));
+      const monthPercent = Math.min(100, Math.round((monthVal / monthTarget) * 100));
+      const yearPercent = Math.min(100, Math.round((yearVal / yearTarget) * 100));
+
+      document.getElementById('stats-header-title').textContent = item.text.substring(0, 25) + '...';
+      document.getElementById('stats-target-val').textContent = dailyTarget;
+
+      document.getElementById('stat-bar-today-num').textContent = `${currentVal} / ${dailyTarget}`;
+      document.getElementById('stat-bar-today').style.width = `${todayPercent}%`;
+
+      document.getElementById('stat-bar-week-num').textContent = `${formatNum(weekVal)} / ${formatNum(weekTarget)}`;
+      document.getElementById('stat-bar-week').style.width = `${weekPercent}%`;
+
+      document.getElementById('stat-bar-month-num').textContent = `${formatNum(monthVal)} / ${formatNum(monthTarget)}`;
+      document.getElementById('stat-bar-month').style.width = `${monthPercent}%`;
+
+      document.getElementById('stat-bar-year-num').textContent = `${formatNum(yearVal)} / ${formatNum(yearTarget)}`;
+      document.getElementById('stat-bar-year').style.width = `${yearPercent}%`;
+
+      const now = new Date();
+      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+      const getDateKey = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      const d0 = new Date(now);
+      const d1 = new Date(now); d1.setDate(now.getDate() - 1);
+      const d2 = new Date(now); d2.setDate(now.getDate() - 2);
+      const d3 = new Date(now); d3.setDate(now.getDate() - 3);
+
+      const val0 = currentVal;
+      const val1 = (historyData[getDateKey(d1)] && historyData[getDateKey(d1)][dhikrId]) || 0;
+      const val2 = (historyData[getDateKey(d2)] && historyData[getDateKey(d2)][dhikrId]) || 0;
+      const val3 = (historyData[getDateKey(d3)] && historyData[getDateKey(d3)][dhikrId]) || 0;
+
+      document.getElementById('hist-day-0-date').textContent = d0.getDate();
+      document.getElementById('hist-day-0-val').textContent = val0;
+
+      document.getElementById('hist-day-1-name').textContent = dayNames[d1.getDay()];
+      document.getElementById('hist-day-1-date').textContent = d1.getDate();
+      document.getElementById('hist-day-1-val').textContent = val1;
+
+      document.getElementById('hist-day-2-name').textContent = dayNames[d2.getDay()];
+      document.getElementById('hist-day-2-date').textContent = d2.getDate();
+      document.getElementById('hist-day-2-val').textContent = val2;
+
+      document.getElementById('hist-day-3-name').textContent = dayNames[d3.getDay()];
+      document.getElementById('hist-day-3-date').textContent = d3.getDate();
+      document.getElementById('hist-day-3-val').textContent = val3;
+
+      const maxVal = Math.max(val0, val1, val2, 1);
+      const h0 = Math.max(10, Math.round((val0 / maxVal) * 100));
+      const h1 = Math.max(10, Math.round((val1 / maxVal) * 100));
+      const h2 = Math.max(10, Math.round((val2 / maxVal) * 100));
+
+      const chartBar0 = document.getElementById('chart-bar-0');
+      const chartBar1 = document.getElementById('chart-bar-1');
+      const chartBar2 = document.getElementById('chart-bar-2');
+
+      if (chartBar0) chartBar0.style.height = `${h0}%`;
+      if (chartBar1) chartBar1.style.height = `${h1}%`;
+      if (chartBar2) chartBar2.style.height = `${h2}%`;
+
+      document.getElementById('chart-val-0').textContent = val0;
+      document.getElementById('chart-val-1').textContent = val1;
+      document.getElementById('chart-val-2').textContent = val2;
+
+      statsModal.classList.remove('hidden');
+    }
+
+    // Badges & Challenges Logic
+    function updateBadgesUI() {
+      const totalAll = getTotalAllTimeCounts();
+      const weeklyCounts = getWeeklyTotalCounts();
+      const streak = streakState.count || 1;
+
+      // Update weekly goal
+      document.getElementById('weekly-goal-text').textContent = `${formatNum(weeklyCounts)} / ${formatNum(weeklyGoalTarget)}`;
+      const weeklyPercent = Math.min(100, Math.round((weeklyCounts / weeklyGoalTarget) * 100));
+      document.getElementById('weekly-goal-bar').style.width = `${weeklyPercent}%`;
+
+      const motivationEl = document.getElementById('weekly-goal-motivation');
+      if (weeklyPercent >= 100) {
+        motivationEl.textContent = '🎉 تهانينا! لقد حققت الهدف الأسبوعي بنجاح!';
+        motivationEl.className = 'text-[10px] text-emerald-400 font-extrabold text-center pt-0.5';
+      } else {
+        motivationEl.textContent = `متبقي ${formatNum(weeklyGoalTarget - weeklyCounts)} تسبيحة لتحقيق الهدف هذا الأسبوع`;
+        motivationEl.className = 'text-[10px] text-slate-400 text-center font-semibold pt-0.5';
+      }
+
+      // Badges Master List
+      const badges = [
+        {
+          id: 'b1',
+          title: 'وسام الذاكرين',
+          icon: '👑',
+          desc: '10,000 تسبيحة إجمالية',
+          unlocked: totalAll >= 10000,
+          progress: `${formatNum(totalAll)} / 10,000`
+        },
+        {
+          id: 'b2',
+          title: 'وسام البداية المباركة',
+          icon: '🌟',
+          desc: '1,000 تسبيحة إجمالية',
+          unlocked: totalAll >= 1000,
+          progress: `${formatNum(totalAll)} / 1,000`
+        },
+        {
+          id: 'b3',
+          title: 'وسام مواظبة الأسبوع',
+          icon: '🔥',
+          desc: 'سلسلة 7 أيام متتالية',
+          unlocked: streak >= 7,
+          progress: `${streak} / 7 أيام`
+        },
+        {
+          id: 'b4',
+          title: 'وسام مواظبة الشهر',
+          icon: '🥈',
+          desc: 'سلسلة 30 يوماً متتالية',
+          unlocked: streak >= 30,
+          progress: `${streak} / 30 يوماً`
+        },
+        {
+          id: 'b5',
+          title: 'وسام المواظبة الذهبي',
+          icon: '🥇',
+          desc: 'سلسلة 100 يوم متتالية',
+          unlocked: streak >= 100,
+          progress: `${streak} / 100 يوم`
+        },
+        {
+          id: 'b6',
+          title: 'وسام التحدي الأسبوعي',
+          icon: '🎯',
+          desc: 'إكمال هدف التسبيح الأسبوعي',
+          unlocked: weeklyCounts >= weeklyGoalTarget,
+          progress: `${weeklyPercent}%`
+        }
+      ];
+
+      const unlockedCount = badges.filter(b => b.unlocked).length;
+      document.getElementById('unlocked-badges-count').textContent = unlockedCount;
+
+      const container = document.getElementById('badges-grid-container');
+      container.innerHTML = '';
+
+      badges.forEach(b => {
+        const badgeCard = document.createElement('div');
+        badgeCard.className = `p-3 rounded-2xl border transition-all flex flex-col justify-between space-y-2 ${
+          b.unlocked 
+            ? 'bg-gradient-to-b from-amber-500/10 to-slate-900 border-amber-500/40 shadow-lg shadow-amber-500/5' 
+            : 'bg-slate-900 border-slate-800 badge-locked'
+        }`;
+
+        badgeCard.innerHTML = `
+          <div class="flex items-start justify-between">
+            <span class="text-2xl">${b.icon}</span>
+            <span class="text-[9px] px-2 py-0.5 rounded-md font-extrabold ${
+              b.unlocked 
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                : 'bg-slate-800 text-slate-500'
+            }">
+              ${b.unlocked ? 'مكتمَل' : 'قيد الإنجاز'}
+            </span>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-extrabold text-slate-100">${b.title}</h4>
+            <p class="text-[10px] text-slate-400 font-semibold">${b.desc}</p>
+          </div>
+
+          <div class="pt-1 border-t border-slate-800/80 text-[10px] font-mono text-amber-400 flex justify-between">
+            <span class="text-slate-500 font-sans">التقدم:</span>
+            <span>${b.progress}</span>
+          </div>
+        `;
+
+        container.appendChild(badgeCard);
+      });
+    }
+
+    function updateSunnahBanner() {
+      const today = new Date();
+      const dayOfWeek = today.getDay(); // 0 = Sun, 1 = Mon, ... 5 = Fri
+      const bannerText = document.getElementById('sunnah-banner-text');
+
+      if (dayOfWeek === 5) { // Friday
+        bannerText.textContent = 'سُنّة الجمعة: قراءة سورة الكهف، والإكثار من الصلاة على النبي ﷺ.';
+      } else if (dayOfWeek === 0 || dayOfWeek === 3) { // Sunday or Wednesday Evening
+        bannerText.textContent = 'تذكير السُّنّة: صيام غدٍ (الاثنين / الخميس) سُنّة مؤكدة.';
+      } else {
+        bannerText.textContent = 'تذكير: «أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ».';
+      }
+    }
+
+    function renderHijriCalendarGrid() {
+      const daysContainer = document.getElementById('hijri-calendar-days');
+      daysContainer.innerHTML = '';
+
+      const today = new Date();
+      const currentDayNum = today.getDate();
+
+      // Render simple month grid (1-30)
+      for (let i = 1; i <= 30; i++) {
+        const dayCell = document.createElement('div');
+        const isToday = (i === (currentDayNum % 29) + 1); // approximate day map
+        const isWhiteDay = (i === 13 || i === 14 || i === 15);
+
+        dayCell.className = `py-2 rounded-xl border flex flex-col items-center justify-center transition ${
+          isToday 
+            ? 'bg-sky-600 text-white border-sky-400 font-extrabold shadow-md' 
+            : isWhiteDay 
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold' 
+              : 'bg-slate-950/40 text-slate-300 border-slate-800/60 hover:bg-slate-800'
+        }`;
+
+        dayCell.innerHTML = `
+          <span>${i}</span>
+          ${isWhiteDay ? '<span class="text-[8px] text-amber-400">بيض</span>' : ''}
+        `;
+
+        daysContainer.appendChild(dayCell);
+      }
+    }
+
+    function setupEventListeners() {
+      searchInput.addEventListener('input', (e) => {
+        currentSearchTerm = e.target.value.trim();
+        renderCurrentTab();
+      });
+
+      document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        localStorage.setItem('athkari_sound', soundEnabled);
+        updateSoundIcon();
+      });
+
+      document.getElementById('btn-toggle-theme').addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+      });
+
+      document.getElementById('btn-close-sunnah-banner').addEventListener('click', () => {
+        document.getElementById('sunnah-reminder-banner').classList.add('hidden');
+      });
+
+      document.getElementById('btn-reset-current-section').addEventListener('click', () => {
+        const dataset = getActiveDataset();
+        dataset.forEach(item => {
+          delete countsState[item.id];
+        });
+        localStorage.setItem('athkari_counts_v3', JSON.stringify(countsState));
+        syncTodayHistory();
+        showToast('تم تصفير عدادات هذا القسم');
+        renderCurrentTab();
+      });
+
+      document.getElementById('btn-open-badges').addEventListener('click', () => {
+        updateBadgesUI();
+        badgesModal.classList.remove('hidden');
+      });
+
+      document.getElementById('btn-close-badges').addEventListener('click', () => {
+        badgesModal.classList.add('hidden');
+      });
+
+      document.getElementById('btn-edit-weekly-goal').addEventListener('click', () => {
+        const newGoal = prompt('أدخل هدفك الأسبوعي الجديد بالتسبيح:', weeklyGoalTarget);
+        if (newGoal && !isNaN(newGoal) && parseInt(newGoal) > 0) {
+          weeklyGoalTarget = parseInt(newGoal);
+          localStorage.setItem('athkari_weekly_goal_target', weeklyGoalTarget);
+          updateBadgesUI();
+          showToast('تم تحديث الهدف الأسبوعي');
+        }
+      });
+
+      document.getElementById('btn-open-calendar').addEventListener('click', () => {
+        renderHijriCalendarGrid();
+        calendarModal.classList.remove('hidden');
+      });
+
+      document.getElementById('btn-close-calendar').addEventListener('click', () => {
+        calendarModal.classList.add('hidden');
+      });
+
+      document.getElementById('btn-open-misbaha-modal').addEventListener('click', () => {
+        populateMisbahaSelect();
+        misbahaModal.classList.remove('hidden');
+      });
+
+      document.getElementById('btn-close-misbaha').addEventListener('click', () => {
+        misbahaModal.classList.add('hidden');
+        renderCurrentTab();
+      });
+
+      document.getElementById('btn-close-stats').addEventListener('click', () => {
+        statsModal.classList.add('hidden');
+      });
+
+      document.getElementById('btn-close-dhikr-modal').addEventListener('click', () => {
+        dhikrModal.classList.add('hidden');
+      });
+
+      document.getElementById('btn-save-dhikr-modal').addEventListener('click', saveDhikrModalData);
+
+      document.getElementById('btn-cancel-delete').addEventListener('click', () => {
+        deleteModal.classList.add('hidden');
+        pendingDeleteId = null;
+      });
+
+      document.getElementById('btn-confirm-delete').addEventListener('click', confirmDeleteDhikr);
+
+      btnMisbahaTap.addEventListener('click', () => {
+        const activeDhikrId = misbahaSelect.value;
+        if (!activeDhikrId) return;
+
+        const current = countsState[activeDhikrId] || 0;
+        countsState[activeDhikrId] = current + 1;
+        localStorage.setItem('athkari_counts_v3', JSON.stringify(countsState));
+        syncTodayHistory();
+        markActivityToday();
+
+        playFeedbackSound();
+        updateMisbahaDisplay();
+        updateBadgesUI();
+      });
+
+      misbahaSelect.addEventListener('change', () => {
+        updateMisbahaDisplay();
+      });
+
+      document.getElementById('btn-reset-misbaha').addEventListener('click', () => {
+        const activeDhikrId = misbahaSelect.value;
+        if (activeDhikrId) {
+          countsState[activeDhikrId] = 0;
+          localStorage.setItem('athkari_counts_v3', JSON.stringify(countsState));
+          syncTodayHistory();
+          updateMisbahaDisplay();
+          showToast('تم تصفير عداد المسبحة');
+        }
+      });
+
+      document.querySelectorAll('.misbaha-quick-add').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const addAmount = parseInt(btn.getAttribute('data-add')) || 1;
+          const activeDhikrId = misbahaSelect.value;
+          if (activeDhikrId) {
+            const current = countsState[activeDhikrId] || 0;
+            countsState[activeDhikrId] = current + addAmount;
+            localStorage.setItem('athkari_counts_v3', JSON.stringify(countsState));
+            syncTodayHistory();
+            markActivityToday();
+            playFeedbackSound();
+            updateMisbahaDisplay();
+            updateBadgesUI();
+          }
+        });
+      });
+    }
+
+    function populateMisbahaSelect() {
+      misbahaSelect.innerHTML = '';
+      const allAthkar = getAllAthkarMerged();
+      
+      allAthkar.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = item.text.substring(0, 35) + '...';
+        misbahaSelect.appendChild(opt);
+      });
+
+      updateMisbahaDisplay();
+    }
+
+    function openMisbahaWithDhikr(dhikrId) {
+      populateMisbahaSelect();
+      misbahaSelect.value = dhikrId;
+      updateMisbahaDisplay();
+      misbahaModal.classList.remove('hidden');
+    }
+
+    function updateMisbahaDisplay() {
+      const selectedId = misbahaSelect.value;
+      const allAthkar = getAllAthkarMerged();
+      const found = allAthkar.find(x => x.id === selectedId) || allAthkar[0];
+
+      if (found) {
+        misbahaText.textContent = found.text;
+        misbahaVirtue.textContent = found.virtue || '';
+        const current = countsState[found.id] || 0;
+        misbahaCountNum.textContent = current;
+        misbahaTargetNum.textContent = `الهدف: ${found.count}`;
+      }
+    }
+
+    function playFeedbackSound() {
+      if (!soundEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.09);
+      } catch (e) {}
+
+      if (navigator.vibrate) {
+        navigator.vibrate(20);
+      }
+    }
+
+    function updateSoundIcon() {
+      const icon = document.getElementById('sound-icon');
+      if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high text-xs text-sky-400';
+      } else {
+        icon.className = 'fa-solid fa-volume-xmark text-xs text-slate-500';
+      }
+    }
+
+    function speakText(text) {
+      if (!synth) return;
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ar-SA';
+      utterance.rate = 0.9;
+      synth.speak(utterance);
+    }
+
+    function showToast(message) {
+      document.getElementById('toast-text').textContent = message;
+      toastMsg.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+      toastMsg.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toastMsg.classList.remove('opacity-100', 'translate-y-0');
+        toastMsg.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+      }, 2500);
+    }
+
+    function updateHijriDate() {
+      try {
+        const today = new Date();
+        const options = { calendar: 'islamic-umalqura', day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' };
+        const formatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', options);
+        const formattedDate = formatter.format(today);
+
+        document.getElementById('hijri-date-text').textContent = formattedDate;
+        document.getElementById('calendar-today-full').textContent = formattedDate;
+        document.getElementById('cal-modal-hijri-month').textContent = formattedDate.split(' ')[2] || 'أم القرى';
+      } catch (e) {
+        document.getElementById('hijri-date-text').textContent = 'أذكار المسلم والأدعية النبوية';
+      }
+    }
+  </script>
+</body>
+</html>
