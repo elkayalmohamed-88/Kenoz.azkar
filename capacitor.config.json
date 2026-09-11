@@ -1,0 +1,9 @@
+{
+  "appId": "com.athkari.app",
+  "appName": "أذكاري",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
